@@ -1,0 +1,53 @@
+dist: xenial
+language: bash
+services: docker
+addons:
+  apt:
+    config:
+      retries: true
+    update: true
+    sources:
+      # To install podman and some container tools.
+      # https://github.com/containers/libpod/blob/master/install.md
+      - sourceline: "ppa:projectatomic/ppa"
+    packages:
+      # repository: ppa:projectatomic/ppa
+      - podman
+before_install:
+  - podman --version
+  - podman version
+  - podman info --debug
+  - docker --version
+  - docker version
+  - docker info
+matrix:
+  include:
+    - name: podman-own-registries-sudo-podman-run
+      install:
+        - mkdir -p ~/.config/containers
+        - cp -p ci/registries.conf ~/.config/containers
+      script:
+        - podman version
+        - podman info --debug
+        - sudo podman --log-level debug run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        - ls /proc/sys/fs/binfmt_misc/
+    - name: podman-own-registries-podman-run
+      install:
+        - mkdir -p ~/.config/containers
+        - cp -p ci/registries.conf ~/.config/containers
+      script:
+        - podman version
+        - podman info --debug
+        # https://hub.docker.com/_/fedora
+        - podman run --rm -t fedora uname -m
+    - name: podman-sudo-podman-run-full-image-with-registry
+      script:
+        - podman version
+        - podman info --debug
+        - sudo podman --log-level debug run --rm --privileged docker.io/multiarch/qemu-user-static --reset -p yes
+        - ls /proc/sys/fs/binfmt_misc/
+        # https://hub.docker.com/r/arm64v8/fedora/
+        - podman run --rm -t docker.io/arm64v8/fedora uname -m
+branches:
+  only:
+    - master
