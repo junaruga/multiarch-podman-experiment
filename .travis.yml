@@ -22,6 +22,25 @@ before_install:
   - docker info
 matrix:
   include:
+    - name: podman-own-registries-podman-run
+      install:
+        - mkdir -p ~/.config/containers
+        - cp -p ci/registries.conf ~/.config/containers
+      script:
+        - podman version
+        - podman info --debug
+        # https://hub.docker.com/_/fedora
+        - podman run --rm -t fedora uname -m
+    - name: podman-sudo
+      script:
+        - podman version
+        - podman info --debug
+        - sudo podman --log-level debug run --rm docker.io/fedora uname -m
+    - name: podman-sudo-privileged
+      script:
+        - podman version
+        - podman info --debug
+        - sudo podman --log-level debug run --rm --privileged docker.io/fedora uname -m
     - name: podman-own-registries-sudo-podman-run
       install:
         - mkdir -p ~/.config/containers
@@ -32,15 +51,6 @@ matrix:
         - ls /proc/sys/fs/binfmt_misc/
       script:
         - echo "OK"
-    - name: podman-own-registries-podman-run
-      install:
-        - mkdir -p ~/.config/containers
-        - cp -p ci/registries.conf ~/.config/containers
-      script:
-        - podman version
-        - podman info --debug
-        # https://hub.docker.com/_/fedora
-        - podman run --rm -t fedora uname -m
     - name: podman-sudo-podman-run-full-image-with-registry
       install:
         - podman version
