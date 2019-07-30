@@ -26,11 +26,12 @@ matrix:
       install:
         - mkdir -p ~/.config/containers
         - cp -p ci/registries.conf ~/.config/containers
-      script:
         - podman version
         - podman info --debug
         - sudo podman --log-level debug run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - ls /proc/sys/fs/binfmt_misc/
+      script:
+        - echo "OK"
     - name: podman-own-registries-podman-run
       install:
         - mkdir -p ~/.config/containers
@@ -41,13 +42,27 @@ matrix:
         # https://hub.docker.com/_/fedora
         - podman run --rm -t fedora uname -m
     - name: podman-sudo-podman-run-full-image-with-registry
-      script:
+      install:
         - podman version
         - podman info --debug
         - sudo podman --log-level debug run --rm --privileged docker.io/multiarch/qemu-user-static --reset -p yes
         - ls /proc/sys/fs/binfmt_misc/
+      script:
         # https://hub.docker.com/r/arm64v8/fedora/
         - podman run --rm -t docker.io/arm64v8/fedora uname -m
-branches:
-  only:
-    - master
+    - name: docker
+      install:
+        - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        - ls /proc/sys/fs/binfmt_misc/
+      script:
+        - docker run --rm -t arm64v8/fedora uname -m
+    - name: docker-dockerfile
+      install:
+        - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        - ls /proc/sys/fs/binfmt_misc/
+        - docker build --rm -t my-fedora .
+      script:
+        - docker run --rm -t my-fedora uname -m
+# branches:
+#   only:
+#     - master
