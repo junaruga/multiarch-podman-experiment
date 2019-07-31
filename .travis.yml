@@ -27,13 +27,15 @@ matrix:
     # podman/docker use cases with fedora image.
     # https://hub.docker.com/_/fedora
     # docker
-    - name: docker
+    # Passed
+    - name: "1. docker"
       install:
         - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - ls /proc/sys/fs/binfmt_misc/
       script:
         - docker run --rm -t arm64v8/fedora uname -m
-    - name: docker-dockerfile
+    # Passed
+    - name: "2. docker-dockerfile"
       install:
         - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - ls /proc/sys/fs/binfmt_misc/
@@ -42,13 +44,15 @@ matrix:
         - docker run --rm -t my-fedora uname -m
     # podman ideal use cases
     # I hope that below 2 use cases replacing above 2 cases works.
-    - name: podman
+    # Passed with an error message.
+    - name: "3. podman"
       install:
         - sudo podman run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - ls /proc/sys/fs/binfmt_misc/
       script:
         - podman run --rm -t arm64v8/fedora uname -m
-    - name: podman-dockerfile
+    # Failed
+    - name: "4. podman-dockerfile"
       install:
         - sudo podman run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - ls /proc/sys/fs/binfmt_misc/
@@ -56,7 +60,8 @@ matrix:
       script:
         - podman run --rm -t my-fedora uname -m
     # podman use cases to analyze issues.
-    - name: podman-own-registries-podman-run
+    # Failed
+    - name: "5. podman-own-registries-podman-run"
       install:
         - mkdir -p ~/.config/containers
         - cp -p ci/registries.conf ~/.config/containers
@@ -64,17 +69,16 @@ matrix:
         - podman version
         - podman info --debug
         - podman run --rm -t fedora uname -m
-    - name: podman-sudo
+    # This case shows the most important issue related to sudo simply.
+    # Failed
+    - name: "6. podman-sudo"
       script:
         - podman version
         - podman info --debug
         - sudo podman --log-level debug run --rm docker.io/fedora uname -m
-    - name: podman-sudo-privileged
-      script:
-        - podman version
-        - podman info --debug
-        - sudo podman --log-level debug run --rm --privileged docker.io/fedora uname -m
-    - name: podman-own-registries-sudo-podman-run
+    # Below 2 cases are lower priority.
+    # Failed
+    - name: "7. podman-own-registries-sudo-podman-run"
       install:
         - mkdir -p ~/.config/containers
         - cp -p ci/registries.conf ~/.config/containers
@@ -84,7 +88,8 @@ matrix:
         - ls /proc/sys/fs/binfmt_misc/
       script:
         - echo "OK"
-    - name: podman-sudo-podman-run-full-image-with-registry
+    # Failed
+    - name: "8. podman-sudo-podman-run-full-image-with-registry"
       install:
         - podman version
         - podman info --debug
