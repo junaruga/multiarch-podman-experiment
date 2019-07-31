@@ -17,6 +17,8 @@ before_install:
   - podman --version
   - podman version
   - podman info --debug
+  - apt-cache show podman
+  - dpkg-query -L podman
   - docker --version
   - docker version
   - docker info
