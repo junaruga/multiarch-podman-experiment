@@ -72,9 +72,17 @@ matrix:
     # This case shows the most important issue related to sudo simply.
     # Failed
     - name: "6. podman-sudo"
+      # sudo is required by default. And the sudo tag is deprecated.
+      # https://docs.travis-ci.com/user/reference/overview/#virtualisation-environment-vs-operating-system
+      # https://blog.travis-ci.com/2018-11-19-required-linux-infrastructure-migration
+      # > the sudo keyword will be fully deprecated
       script:
         - podman version
         - podman info --debug
+        - ls /var/lib || true
+        - ls /var/lib/containers || true
+        - sudo mkdir -p /var/lib/containers/storage/libpod
+        - sudo ls -l /var/lib/containers/storage/libpod
         - sudo podman --log-level debug run --rm docker.io/fedora uname -m
     # Below 2 cases are lower priority.
     # Failed
