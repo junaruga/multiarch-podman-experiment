@@ -19,6 +19,12 @@ before_install:
   - podman info --debug
   - apt-cache show podman
   - dpkg-query -L podman
+
+  - apt-cache show containers-common
+  - ls -l /etc/containers/registries.conf
+  - dpkg -S /etc/containers/registries.conf
+  - cat /etc/containers/registries.conf
+
   - docker --version
   - docker version
   - docker info
