@@ -28,11 +28,6 @@ before_install:
   # /etc/containers/registries.conf does not exist.
   # https://clouding.io/kb/en/how-to-install-and-use-podman-on-ubuntu-18-04/
   - echo -e "[registries.search]\nregistries = ['docker.io']" > registries.conf
-
-  - mkdir -p ~/.config/containers
-  - cp -p registries.conf ~/.config/containers/registries.conf
-  - cat ~/.config/containers/registries.conf
-
   - mkdir -p /etc/containers
   - sudo cp -p registries.conf /etc/containers/registries.conf
   - cat /etc/containers/registries.conf
