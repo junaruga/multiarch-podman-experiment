@@ -7,13 +7,14 @@ addons:
       retries: true
     update: true
     sources:
-      # To install podman and some container tools.
+      # To install podman.
       # https://github.com/containers/libpod/blob/master/install.md
       - sourceline: "ppa:projectatomic/ppa"
     packages:
       # repository: ppa:projectatomic/ppa
       - podman
 before_install:
+  # Show version and info.
   - podman --version
   - podman version
   - podman info --debug
@@ -22,82 +23,61 @@ before_install:
   - docker --version
   - docker version
   - docker info
+
+  # Hack podman's configuration files.
+  # /etc/containers/registries.conf does not exist.
+  # https://clouding.io/kb/en/how-to-install-and-use-podman-on-ubuntu-18-04/
+  - echo -e "[registries.search]\nregistries = ['docker.io']" > registries.conf
+
+  - mkdir -p ~/.config/containers
+  - cp -p registries.conf ~/.config/containers/registries.conf
+  - cat ~/.config/containers/registries.conf
+
+  - mkdir -p /etc/containers
+  - sudo cp -p registries.conf /etc/containers/registries.conf
+  - cat /etc/containers/registries.conf
 matrix:
   include:
     # podman/docker use cases with fedora image.
     # https://hub.docker.com/_/fedora
     # docker
-    # Passed
-    - name: "1. docker"
+    - name: "1. docker-qemu"
       install:
         - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - ls /proc/sys/fs/binfmt_misc/
       script:
         - docker run --rm -t arm64v8/fedora uname -m
-    # Passed
-    - name: "2. docker-dockerfile"
+    - name: "2. docker-dockerfile-qemu"
       install:
         - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - ls /proc/sys/fs/binfmt_misc/
-        - docker build --rm -t my-fedora .
+        - docker build --rm -t my-fedora-arm64 --build-arg BASE_IMAGE=arm64v8/fedora .
       script:
-        - docker run --rm -t my-fedora uname -m
-    # podman ideal use cases
-    # I hope that below 2 use cases replacing above 2 cases works.
-    # Passed with an error message.
-    - name: "3. podman"
+        - docker run --rm -t my-fedora-arm64 uname -m
+    # podman
+    # Passing with below error message.
+    # ERRO[0010] could not find slirp4netns, the network namespace won't be configured: exec: "slirp4netns": executable file not found in $PATH
+    - name: "3. podman by regular user"
+      script:
+        - podman run --rm -t fedora uname -m
+    - name: "4. podman-dockerfile by regular user"
+      install:
+        - podman build --rm -t my-fedora .
+      script:
+        - podman run --rm -t my-fedora uname -m
+    - name: "5. podman by root"
+      script:
+        - sudo podman run --rm -t fedora uname -m
+    - name: "6. podman-qemu"
       install:
         - sudo podman run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - ls /proc/sys/fs/binfmt_misc/
       script:
         - podman run --rm -t arm64v8/fedora uname -m
-    # Failed
-    - name: "4. podman-dockerfile"
+    - name: "7. podman-dockerfile-qemu"
       install:
         - sudo podman run --rm --privileged multiarch/qemu-user-static --reset -p yes
         - ls /proc/sys/fs/binfmt_misc/
-        - podman build --rm -t my-fedora .
+        - podman build --rm -t my-fedora-arm64 --build-arg BASE_IMAGE=arm64v8/fedora .
       script:
-        - podman run --rm -t my-fedora uname -m
-    # podman use cases to analyze issues.
-    # Failed
-    - name: "5. podman-own-registries-podman-run"
-      install:
-        - mkdir -p ~/.config/containers
-        - cp -p ci/registries.conf ~/.config/containers
-      script:
-        - podman version
-        - podman info --debug
-        - podman run --rm -t fedora uname -m
-    # This case shows the most important issue related to sudo simply.
-    # Failed
-    - name: "6. podman-sudo"
-      script:
-        - podman version
-        - podman info --debug
-        - sudo podman --log-level debug run --rm docker.io/fedora uname -m
-    # Below 2 cases are lower priority.
-    # Failed
-    - name: "7. podman-own-registries-sudo-podman-run"
-      install:
-        - mkdir -p ~/.config/containers
-        - cp -p ci/registries.conf ~/.config/containers
-        - podman version
-        - podman info --debug
-        - sudo podman --log-level debug run --rm --privileged multiarch/qemu-user-static --reset -p yes
-        - ls /proc/sys/fs/binfmt_misc/
-      script:
-        - echo "OK"
-    # Failed
-    - name: "8. podman-sudo-podman-run-full-image-with-registry"
-      install:
-        - podman version
-        - podman info --debug
-        - sudo podman --log-level debug run --rm --privileged docker.io/multiarch/qemu-user-static --reset -p yes
-        - ls /proc/sys/fs/binfmt_misc/
-      script:
-        # https://hub.docker.com/r/arm64v8/fedora/
-        - podman run --rm -t docker.io/arm64v8/fedora uname -m
-# branches:
-#   only:
-#     - master
+        - podman run --rm -t my-fedora-arm64 uname -m
