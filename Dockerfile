@@ -1,2 +1,3 @@
-FROM arm64v8/fedora
+ARG BASE_IMAGE=fedora
+FROM ${BASE_IMAGE}
 RUN uname -m
